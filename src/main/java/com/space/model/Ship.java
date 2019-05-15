@@ -2,6 +2,7 @@ package com.space.model;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Objects;
 
 @Entity
 public class Ship {
@@ -97,5 +98,28 @@ public class Ship {
 
 	public void setRating(Double rating) {
 		this.rating = rating;
+	}
+
+	//redundant, can be deleted
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Ship ship = (Ship) o;
+		return Objects.equals(id, ship.id) &&
+				Objects.equals(name, ship.name) &&
+				Objects.equals(planet, ship.planet) &&
+				shipType == ship.shipType &&
+				Objects.equals(new Date(prodDate.getTime()).getYear(), new Date(prodDate.getTime()).getYear()) &&
+				Objects.equals(isUsed, ship.isUsed) &&
+				Objects.equals(speed, ship.speed) &&
+				Objects.equals(crewSize, ship.crewSize) &&
+				Objects.equals(rating, ship.rating);
+	}
+
+	//redundant, can be deleted
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, name, planet, shipType, prodDate, isUsed, speed, crewSize, rating);
 	}
 }
