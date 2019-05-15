@@ -132,11 +132,11 @@ public class ShipService {
 		return filteredShipsList;
 	}
 
+	//TODO optimize logic, this is a bullshit.
 	public List<Ship> getSortedShipsList(List<Ship> list,
 										 Integer pageNumber,
 										 Integer pageSize,
 										 String order) {
-
 		//no param
 		if (pageSize == null && pageNumber == null && order == null) {
 			return list.stream()
@@ -151,11 +151,11 @@ public class ShipService {
 					.collect(Collectors.toList());
 		}
 
-		//ONLY pageSize != null
+		//ONLY pageNumber != null
 		if (pageSize == null && pageNumber != null && order == null) {
 			return list.stream()
 					.skip(pageNumber * 3)
-					.limit(pageNumber) //default pageSize
+					.limit(3) //default pageSize
 					.collect(Collectors.toList());
 		}
 
@@ -167,8 +167,30 @@ public class ShipService {
 					.collect(Collectors.toList());
 		}
 
-		//never happens
-		return list;
+		//pageSize != null
+		if (pageSize == null) {
+			return list.stream()
+					.sorted(getComparatorByOrder(order))
+					.limit(3) //default pageSize
+					.collect(Collectors.toList());
+		}
+
+		//pageNumber != null
+		if (pageNumber == null) {
+			return list.stream()
+					.sorted(getComparatorByOrder(order))
+					.limit(pageSize) //default pageSize
+					.skip(pageSize)
+					.collect(Collectors.toList());
+		}
+
+
+		return list.stream()
+				.sorted(getComparatorByOrder(order))
+				.skip(pageNumber * pageSize)
+				.limit(pageSize)
+				.collect(Collectors.toList());
+
 	}
 
 
