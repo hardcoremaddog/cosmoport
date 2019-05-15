@@ -136,7 +136,6 @@ public class ShipService {
 										 Integer pageNumber,
 										 Integer pageSize,
 										 String order) {
-		//SORTING
 
 		//no param
 		if (pageSize == null && pageNumber == null && order == null) {
@@ -156,7 +155,7 @@ public class ShipService {
 		if (pageSize == null && pageNumber != null && order == null) {
 			return list.stream()
 					.skip(pageNumber * 3)
-					.limit(3) //default pageSize
+					.limit(pageNumber) //default pageSize
 					.collect(Collectors.toList());
 		}
 
