@@ -72,16 +72,22 @@ public class ShipController {
 				.orElseThrow(NotFoundException::new);
 	}
 
-//	@RequestMapping(path = "/rest/ships/", method = RequestMethod.POST)
-//	public ResponseEntity<Ship> createShip(@RequestBody Ship jsonBody) {
-//
-////		Ship ship = shipService.JSONtoJava(jsonBody);
-//		if (jsonBody != null) {
-//			shipRepository.save(jsonBody);
-//		}
-//		shipRepository.save(jsonBody);
-//		return new ResponseEntity<Ship>(jsonBody, HttpStatus.OK);
-//	}
+	@RequestMapping(path = "/rest/ships/", method = RequestMethod.POST)
+	public @ResponseBody Ship createShip(@RequestBody Ship jsonBody) {
+		Ship ship = shipService.prepareBodyToCreate(jsonBody);
+		shipRepository.saveAndFlush(ship);
+		return ship;
+	}
+
+	@RequestMapping(path = "/rest/ships/{id}", method = RequestMethod.POST)
+	public @ResponseBody Ship updateShip(
+			@RequestBody Ship ship, @PathVariable Long id) {
+		Ship shipToUpdate = getShip(id);
+
+
+		shipRepository.saveAndFlush(shipToUpdate);
+		return shipToUpdate;
+	}
 
 	@RequestMapping(path = "/rest/ships/{id}", method = RequestMethod.DELETE)
 	public void deleteShip(@PathVariable Long id) {

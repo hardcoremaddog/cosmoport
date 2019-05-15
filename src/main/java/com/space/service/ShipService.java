@@ -1,12 +1,14 @@
 package com.space.service;
 
 import com.space.controller.ShipOrder;
+import com.space.exceptions.BadRequestException;
 import com.space.model.Ship;
 import com.space.model.ShipType;
 import com.space.repository.ShipRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -184,104 +186,165 @@ public class ShipService {
 					.collect(Collectors.toList());
 		}
 
-
 		return list.stream()
 				.sorted(getComparatorByOrder(order))
 				.skip(pageNumber * pageSize)
 				.limit(pageSize)
 				.collect(Collectors.toList());
-
 	}
 
+	public void checkBodyParamsNotNull(Ship ship) {
+		if (ship.getName() == null
+				|| ship.getPlanet() == null
+				|| ship.getShipType() == null
+				|| ship.getProdDate() == null
+				|| ship.getSpeed() == null
+				|| ship.getCrewSize() == null) {
+			throw new BadRequestException();
+		}
+	}
 
-//	public Ship JSONtoJava(String jsonBody) {
-//
-//		Ship ship = new Ship();
-//
-//		ObjectMapper mapper = new ObjectMapper();
-//		try {
-//			ship = mapper.readValue(jsonBody, Ship.class);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//
-////		Мы не можем создать корабль, если:
-////		- указаны не все параметры из Data Params (кроме isUsed);
-//		if (ship.getName() == null
-//				|| ship.getPlanet() == null
-//				|| ship.getShipType() == null
-//				|| ship.getProdDate() == null
-//				|| ship.getSpeed() == null
-//				|| ship.getCrewSize() == null) {
-//			throw new BadRequestException();
-//		}
-//
-//// 		Если в запросе на создание корабля нет параметра “isUsed”, то считаем,
-////		что пришло значение “false”
-//		Boolean isUsed = false;
-//		if (ship.isUsed() != null) {
-//			isUsed = ship.isUsed();
-//		}
-//
-//		String name = ship.getName();
-//		String planet = ship.getPlanet();
-//		ShipType shipType = ship.getShipType();
-//		Long prodDate = ship.getProdDate();
-//		Double speed = ship.getSpeed();
-//		Integer crewSize = ship.getCrewSize();
-//
-//
-////		- длина значения параметра “name” или “planet” превышает
-////		размер соответствующего поля в БД (50 символов);
-//		if (name.length() > 50 || planet.length() > 50) {
-//			throw new BadRequestException();
-//		}
-////		- значение параметра “name” или “planet” пустая строка;
-//		if (name.equals("") || planet.equals("")) {
-//			throw new BadRequestException();
-//		}
-//
-////		- скорость или размер команды находятся вне заданных
-////		пределов;
-//		if (speed < 0.01 || speed > 0.99
-//		|| crewSize < 1 || crewSize > 9999) {
-//			throw new BadRequestException();
-//		}
-//
-////		- “prodDate”:[Long] < 0;
-//		if (prodDate < 0) {
-//			throw new BadRequestException();
-//		}
-//
-////		- год производства находятся вне заданных пределов.;
-//		Calendar dateMinCal = Calendar.getInstance();
-//		Calendar dateMaxCal = Calendar.getInstance();
-//
-//		dateMinCal.set(2800, Calendar.JANUARY, 1);
-//		dateMaxCal.set(3019, Calendar.DECEMBER, 31);
-//
-//
-//		if (prodDate < dateMinCal.getTimeInMillis() || prodDate > dateMaxCal.getTimeInMillis()) {
-//			throw new BadRequestException();
-//		}
-//
-//		//calculateRating
-//		double k;
-//		if (isUsed) {
-//			k = 0.5;
-//		} else {
-//			k = 1D;
-//		}
-//
-//		Calendar calendar = Calendar.getInstance();
-//		calendar.setTimeInMillis(prodDate);
-//		Integer prodYear = calendar.get(Calendar.YEAR);
-//
-//		Double rating = (80 * speed * k) / (3019 - prodYear + 1);
-//
-//		ship.setRating(rating);
-//
-//		//OK:
-//		return ship;
-//	}
+	public void checkNameLength(Ship ship) {
+		if (ship.getName().length() > 50) {
+			throw new BadRequestException();
+		}
+	}
+
+	public void checkPlanetLength(Ship ship) {
+		if (ship.getPlanet().length() > 50) {
+			throw new BadRequestException();
+		}
+	}
+
+	public void checkNameNotEmpty(Ship ship) {
+		if (ship.getName().equals("")) {
+			throw new BadRequestException();
+		}
+	}
+
+	public void checkPlanetNotEmpty(Ship ship) {
+		if (ship.getPlanet().equals("")) {
+			throw new BadRequestException();
+		}
+	}
+
+	public void checkSpeedIsCorrect(Ship ship) {
+		if (ship.getSpeed() < 0.01 || ship.getSpeed() > 0.99) {
+			throw new BadRequestException();
+		}
+	}
+
+	public void checkCrewSizeCorrect(Ship ship) {
+		if (ship.getCrewSize() < 1 || ship.getCrewSize() > 9999) {
+			throw new BadRequestException();
+		}
+	}
+
+	public void checkProdDateParamIsCorrect(Ship ship) {
+		if (ship.getProdDate().getTime() < 0) {
+			throw new BadRequestException();
+		}
+
+		Calendar dateMinCal = Calendar.getInstance();
+		Calendar dateMaxCal = Calendar.getInstance();
+
+		dateMinCal.set(2800, Calendar.JANUARY, 1);
+		dateMaxCal.set(3019, Calendar.DECEMBER, 31);
+
+		if (ship.getProdDate().getTime() < dateMinCal.getTimeInMillis()
+			|| ship.getProdDate().getTime() > dateMaxCal.getTimeInMillis()) {
+			throw new BadRequestException();
+		}
+	}
+
+	public Double calculateRating(Ship ship) {
+		double k;
+		boolean isUsed = false;
+
+		if (ship.isUsed() != null) {
+			isUsed = ship.isUsed();
+		}
+
+		if (isUsed) {
+			k = 0.5;
+		} else {
+			k = 1D;
+		}
+
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTimeInMillis(ship.getProdDate().getTime());
+		int prodYear = calendar.get(Calendar.YEAR);
+
+		return ((80 * ship.getSpeed() * k) / (3019 - prodYear + 1));
+	}
+
+	public Ship prepareBodyToCreate(Ship ship) {
+		if (ship == null) {
+			return null;
+		}
+
+		Ship newShip = new Ship();
+
+// 		Если в запросе на создание корабля нет параметра “isUsed”, то считаем,
+//		что пришло значение “false”
+		if (ship.isUsed() != null) {
+			newShip.setUsed(ship.isUsed());
+		} else {
+			newShip.setUsed(false);
+		}
+
+//		Мы не можем создать корабль, если:
+//		- указаны не все параметры из Data Params (кроме isUsed);
+		checkBodyParamsNotNull(ship);
+
+//		- длина значения параметра “name” или “planet” превышает
+//		размер соответствующего поля в БД (50 символов);
+		checkNameLength(ship);
+		checkPlanetLength(ship);
+
+//		- значение параметра “name” или “planet” пустая строка;
+		checkNameNotEmpty(ship);
+		checkPlanetNotEmpty(ship);
+
+//		- скорость или размер команды находятся вне заданных
+//		пределов;
+		checkSpeedIsCorrect(ship);
+		checkCrewSizeCorrect(ship);
+
+//		- “prodDate”:[Long] < 0;
+//		- год производства находится вне заданных пределов.;
+		checkProdDateParamIsCorrect(ship);
+
+		//OK. init params
+		String name = ship.getName();
+		String planet = ship.getPlanet();
+		ShipType shipType = ship.getShipType();
+		Date prodDate = ship.getProdDate();
+		Double speed = ship.getSpeed();
+		Integer crewSize = ship.getCrewSize();
+
+		Double rating = calculateRating(ship);
+
+		//set new params
+		newShip.setName(name);
+		newShip.setPlanet(planet);
+		newShip.setShipType(shipType);
+		newShip.setProdDate(prodDate);
+		newShip.setSpeed(speed);
+		newShip.setCrewSize(crewSize);
+		newShip.setRating(rating);
+
+		//OK:
+		return newShip;
+	}
+
+	public Ship updateShip(Ship ship) {
+
+		if (ship != null) {
+			if (ship.getName() != null) {
+
+			}
+		}
+		return null;
+	}
 }

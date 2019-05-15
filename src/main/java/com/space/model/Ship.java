@@ -5,9 +5,10 @@ import java.util.Date;
 import java.util.Objects;
 
 @Entity
+@Table(name = "ship")
 public class Ship {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private Long id;
 	@Column(name = "name")
