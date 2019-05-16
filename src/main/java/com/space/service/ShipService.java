@@ -354,7 +354,7 @@ public class ShipService {
 		}
 
 
-		if (ship != null && jsonBody != null) {
+		if (ship != null) {
 			if (jsonBody.getName() != null) {
 				checkNameNotEmpty(jsonBody);
 				checkNameLength(jsonBody);
