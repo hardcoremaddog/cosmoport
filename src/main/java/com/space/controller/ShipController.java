@@ -1,7 +1,5 @@
 package com.space.controller;
 
-import com.space.exceptions.BadRequestException;
-import com.space.exceptions.NotFoundException;
 import com.space.model.Ship;
 import com.space.repository.ShipRepository;
 import com.space.service.ShipService;
@@ -62,30 +60,24 @@ public class ShipController {
 
 	@RequestMapping(path = "/rest/ships/{id}", method = RequestMethod.GET)
 	public Ship getShip(@PathVariable Long id) {
-		if (id == 0) {
-			throw new BadRequestException();
-		}
-
-		return shipRepository.findAll().stream()
-				.filter(ship -> ship.getId().equals(id))
-				.findFirst()
-				.orElseThrow(NotFoundException::new);
+		return shipService.getShipById(id);
 	}
 
 	@RequestMapping(path = "/rest/ships/", method = RequestMethod.POST)
-	public @ResponseBody Ship createShip(@RequestBody Ship jsonBody) {
+	public @ResponseBody Ship createShip
+			(@RequestBody Ship jsonBody) {
 		Ship ship = shipService.prepareBodyToCreate(jsonBody);
-		shipRepository.saveAndFlush(ship);
+		shipRepository.save(ship);
 		return ship;
 	}
 
 	@RequestMapping(path = "/rest/ships/{id}", method = RequestMethod.POST)
-	public @ResponseBody Ship updateShip(
-			@RequestBody Ship ship, @PathVariable Long id) {
-		Ship shipToUpdate = getShip(id);
-
-
-		shipRepository.saveAndFlush(shipToUpdate);
+	public @ResponseBody Ship updateShip
+			(@RequestBody Ship jsonBody, @PathVariable Long id) {
+		Ship shipToUpdate = shipService.getShipById(id);
+		if (shipService.updateShip(shipToUpdate, jsonBody)) {
+			shipRepository.save(shipToUpdate);
+		}
 		return shipToUpdate;
 	}
 

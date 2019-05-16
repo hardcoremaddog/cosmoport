@@ -2,6 +2,7 @@ package com.space.service;
 
 import com.space.controller.ShipOrder;
 import com.space.exceptions.BadRequestException;
+import com.space.exceptions.NotFoundException;
 import com.space.model.Ship;
 import com.space.model.ShipType;
 import com.space.repository.ShipRepository;
@@ -205,8 +206,10 @@ public class ShipService {
 	}
 
 	public void checkNameLength(Ship ship) {
-		if (ship.getName().length() > 50) {
-			throw new BadRequestException();
+		if (ship.getName() != null) {
+			if (ship.getName().length() > 50) {
+				throw new BadRequestException();
+			}
 		}
 	}
 
@@ -252,30 +255,35 @@ public class ShipService {
 		dateMaxCal.set(3019, Calendar.DECEMBER, 31);
 
 		if (ship.getProdDate().getTime() < dateMinCal.getTimeInMillis()
-			|| ship.getProdDate().getTime() > dateMaxCal.getTimeInMillis()) {
+				|| ship.getProdDate().getTime() > dateMaxCal.getTimeInMillis()) {
 			throw new BadRequestException();
 		}
 	}
 
 	public Double calculateRating(Ship ship) {
-		double k;
-		boolean isUsed = false;
+		if (ship.getProdDate() != null && ship.getSpeed() != null) {
+			double k;
+			boolean isUsed = false;
 
-		if (ship.isUsed() != null) {
-			isUsed = ship.isUsed();
+			if (ship.isUsed() != null) {
+				isUsed = ship.isUsed();
+			}
+
+			if (isUsed) {
+				k = 0.5;
+			} else {
+				k = 1D;
+			}
+
+			Calendar calendar = Calendar.getInstance();
+			calendar.setTimeInMillis(ship.getProdDate().getTime());
+			int prodYear = calendar.get(Calendar.YEAR);
+
+			double ratingNoRound = (80 * ship.getSpeed() * k) / (3019 - prodYear + 1);
+
+			return (double) Math.round(ratingNoRound * 100) / 100;
 		}
-
-		if (isUsed) {
-			k = 0.5;
-		} else {
-			k = 1D;
-		}
-
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTimeInMillis(ship.getProdDate().getTime());
-		int prodYear = calendar.get(Calendar.YEAR);
-
-		return ((80 * ship.getSpeed() * k) / (3019 - prodYear + 1));
+		return null;
 	}
 
 	public Ship prepareBodyToCreate(Ship ship) {
@@ -338,13 +346,66 @@ public class ShipService {
 		return newShip;
 	}
 
-	public Ship updateShip(Ship ship) {
-
-		if (ship != null) {
-			if (ship.getName() != null) {
-
-			}
+	public boolean updateShip(Ship ship, Ship jsonBody) {
+		try { //check for empty body:
+			jsonBody.equals(new Ship()); //can't do it cause fields are null
+		} catch (NullPointerException e) {
+			return false;
 		}
-		return null;
+
+
+		if (ship != null && jsonBody != null) {
+			if (jsonBody.getName() != null) {
+				checkNameNotEmpty(jsonBody);
+				checkNameLength(jsonBody);
+				ship.setName(jsonBody.getName());
+			}
+
+			if (jsonBody.getPlanet() != null) {
+				checkPlanetNotEmpty(jsonBody);
+				checkNameLength(jsonBody);
+				ship.setPlanet(jsonBody.getPlanet());
+			}
+
+			if (jsonBody.getShipType() != null) {
+				ship.setShipType(jsonBody.getShipType());
+			}
+
+			if (jsonBody.getProdDate() != null) {
+				checkProdDateParamIsCorrect(jsonBody);
+				ship.setProdDate(jsonBody.getProdDate());
+			}
+
+			if (jsonBody.isUsed() != null) {
+				ship.setUsed(jsonBody.isUsed());
+			} else {
+				ship.setUsed(false);
+			}
+
+			if (jsonBody.getSpeed() != null) {
+				ship.setSpeed(jsonBody.getSpeed());
+			}
+
+			if (jsonBody.getCrewSize() != null) {
+				checkCrewSizeCorrect(jsonBody);
+				ship.setCrewSize(jsonBody.getCrewSize());
+			}
+
+			ship.setRating(calculateRating(ship));
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public Ship getShipById(Long id) {
+		if (id == 0) {
+			throw new BadRequestException();
+		}
+
+		return shipRepository.findAll().stream()
+				.filter(ship -> ship.getId().equals(id))
+				.findFirst()
+				.orElseThrow(NotFoundException::new);
 	}
 }
